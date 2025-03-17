@@ -18,7 +18,9 @@ python generate.py --model path/to/model.ts --mode prior --duration 5 --temperat
 
 ### 2. Encode and Decode an Audio File
 
+```bash
 python generate.py --model path/to/model.ts --mode encode --input_file path/to/input.wav --output_file /path/to/output.wav
+```
 
 ## Notes
 
