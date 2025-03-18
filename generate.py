@@ -4,6 +4,7 @@ import soundfile as sf
 from librosa import resample
 import numpy as np
 import argparse
+import random
 
 fs = 48000
 
@@ -16,6 +17,7 @@ def sample_prior(model, n_steps, temperature):
 
     with torch.no_grad():
         prior = model.prior(inputs_rave[0])
+    print(prior.shape)
     return prior
 
 def get_audio_from_file(input_file):
@@ -40,6 +42,7 @@ def encode_input_file(model, input_file):
     audio_tensor = audio_tensor.unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions
     with torch.no_grad():
         latent = model.encode(audio_tensor)
+    print(latent.shape)
     return latent
 
 def decode(model, latent):
@@ -66,6 +69,11 @@ def time(dur, ratio):
 def write_audio_to_file(audio, output_file='output.wav'):
     audio_np = audio.squeeze().numpy()  # Remove batch and channel dimensions
     sf.write(output_file, audio_np, fs)
+
+def apply_scale_and_bias(latent, scale, bias):
+    for i in range(latent.size(1)):
+        latent[:, i, :] = latent[:, i, :] * scale[i] + bias[i]
+    return latent
 
 def main():
     parser = argparse.ArgumentParser(description="Generate audio using a RAVE model.")
@@ -99,6 +107,11 @@ def main():
             print("Error: --input_file is required for encode mode.")
             exit()
         latent = encode_input_file(model, args.input_file)
+
+    latent_dim = latent.size(1)
+    scale = [random.uniform(0, 2) for _ in range(latent_dim)]
+    bias = [random.uniform(-10, 10) for _ in range(latent_dim)]
+    latent = apply_scale_and_bias(latent, scale, bias)
 
     audio = decode(model, latent)
     write_audio_to_file(audio, args.output_file)
