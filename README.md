@@ -15,7 +15,13 @@ pip install -r requirements.txt
 ### 1. Generate Audio from Prior Distribution
 
 ```bash
-python generate.py --model path/to/model.ts --mode prior --duration 5 --temperature 0.8 --output_file /path/to/output.wav
+python generate.py \
+  --model path/to/model.ts \
+  --mode prior \
+  --duration 5 \
+  --temperature 0.8 \
+  --output_file /path/to/output.wav
+
 ```
 
 This command will generate audio based on the prior distribution using the
@@ -25,7 +31,11 @@ and `[0.0] * latent_size` respectively.
 ### 2. Encode and Decode an Audio File
 
 ```bash
-python generate.py --model path/to/model.ts --mode encode --input_file path/to/input.wav --output_file /path/to/output.wav
+python generate.py \
+  --model path/to/model.ts \
+  --mode encode \
+  --input_file path/to/input.wav \
+  --output_file /path/to/output.wav
 ```
 
 This command will encode an input audio file and decode it back to audio using the provided model.
@@ -36,6 +46,14 @@ You can specify custom scale and bias values for manipulating the latent space r
 
 ```bash
 python generate.py --model path/to/model.ts --mode prior --duration 5 --temperature 0.8 --scale 1.0 1.2 1.5 --bias 0.0 0.1 0.2 --output_file /path/to/output.wav
+python generate.py \
+  --model path/to/model.ts \
+  --mode prior \
+  --duration 5 \
+  --temperature 0.8 \
+  --scale 1.0 1.2 1.5 \
+  --bias 0.0 0.1 0.2 \
+  --output_file /path/to/output.wav
 ```
 
 In this command, the scale and bias values are provided as lists of floating-point numbers, and they will be applied to the latent space
