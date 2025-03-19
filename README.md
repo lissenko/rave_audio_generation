@@ -41,7 +41,7 @@ python generate.py \
 
 ## Parameters
 
-```bash
+```md
 options:
   -h, --help            show this help message and exit
   --model MODEL         Path to the TorchScript model file.
