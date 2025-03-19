@@ -1,4 +1,6 @@
-# RAVE Audio Generation Script
+# RAVE Latent Space Explorer
+
+![RAVE Latent Space Explorer](./demo/screenshot.png)
 
 ## Requirements
 
