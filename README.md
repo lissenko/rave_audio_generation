@@ -41,6 +41,7 @@ python generate.py \
 
 ## Parameters
 
+```bash
 options:
   -h, --help            show this help message and exit
   --model MODEL         Path to the TorchScript model file.
@@ -58,6 +59,7 @@ options:
                         Scale factors for the latent space (default: [1.0] * latent_size).
   --bias BIAS [BIAS ...]
                         Bias values for the latent space (default: [0.0] * latent_size).
+```
 
 
 ## User Interface
