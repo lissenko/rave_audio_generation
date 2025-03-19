@@ -328,6 +328,11 @@
                         <input type="number" id="temperature" name="temperature" value="{{ temperature }}" step="0.1">
                     </div>
 
+                    <!-- Noise Amount -->
+                    <label for="noise_amount">Noise Amount:</label>
+                    <input type="number" id="noise_amount" name="Latent Noise" value="{{ noise_amount }}" step="0.1" min="0" max="7.0">
+
+
                     <!-- Encode Mode Fields -->
                     <div id="encodeFields" style="display: {% if mode == 'encode' %}block{% else %}none{% endif %};">
                         <label for="input_file">Input Audio File:</label>

@@ -73,7 +73,7 @@ def apply_scale_and_bias(latent, scale, bias):
         latent[:, i, :] = latent[:, i, :] * scale[i] + bias[i]
     return latent
 
-def get_rave_output(model, mode, duration, temperature, input_file, output_file, downsampling_ratio, scale, bias):
+def get_rave_output(model, mode, duration, temperature, input_file, output_file, downsampling_ratio, scale, bias, noise_amount):
 
     model.eval()
     
@@ -96,6 +96,8 @@ def get_rave_output(model, mode, duration, temperature, input_file, output_file,
 
     latent_dim = latent.size(1)
     latent = apply_scale_and_bias(latent, scale, bias)
+    if noise_amount != 0.0:
+        latent = latent + noise_amount * torch.randn_like(latent)
 
     audio = decode(model, latent)
     write_audio_to_file(audio, output_file)
@@ -106,8 +108,9 @@ def main():
     parser.add_argument('--model', type=str, required=True, help="Path to the TorchScript model file.")
     parser.add_argument('--mode', type=str, required=True, choices=['prior', 'encode'], 
                         help="Mode: 'prior' to generate from prior, 'encode' to encode/decode an audio file.")
-    parser.add_argument('--duration', type=float, help="Duration of the generated audio (for prior mode).")
-    parser.add_argument('--temperature', type=float, help="Temperature for sampling from the prior (for prior mode).")
+    parser.add_argument('--duration', type=float, default=3.0, help="Duration of the generated audio (for prior mode).")
+    parser.add_argument('--temperature', type=float, default=1.0, help="Temperature for sampling from the prior (for prior mode).")
+    parser.add_argument('--noise', type=float, default=0.0, help="Noise to add to the latent representation.")
     parser.add_argument('--input_file', type=str, help="Path to the input audio file (for encode mode).")
     parser.add_argument('--output_file', type=str, default='output.wav', help="Path to save the output audio file.")
     parser.add_argument('--scale', type=float, nargs='+', default=[1.0], help="Scale factors for the latent space (default is [1.0]).")
@@ -129,7 +132,22 @@ def main():
         print("Error: Scale and bias dimensions must match the latent dimension.")
         exit()
 
-    get_rave_output(model, args.mode, args.duration, args.temperature, args.input_file, args.output_file, downsampling_ratio, args.scale, args.bias)
+    get_rave_output(model, args.mode, args.duration, args.temperature, \
+                    args.input_file, args.output_file, downsampling_ratio, \
+                    args.scale, args.bias, args.noise)
+
+    if False:
+
+        # Check if latent_size exists in buffers
+        latent_size_buffer = dict(model.named_buffers()).get("_rave.latent_size")
+        if latent_size_buffer is not None:
+            latent_size = latent_size_buffer.item()  # Convert tensor to integer
+            print(f"Latent Size: {latent_size}")
+        else:
+            print("latent_size not found in buffers.")
+
+        if hasattr(model, "full_latent_size"):
+            print("FOUND: ", getattr(model, "full_latent_size"))
 
 if __name__ == '__main__':
     main()

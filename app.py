@@ -77,6 +77,7 @@ def generate_audio():
     timestamp = int(time.time())  # Generate a unique timestamp
     scale = [1.0] * latent_dim if latent_dim > 0 else []  # Default scale values
     bias = [0.0] * latent_dim if latent_dim > 0 else []  # Default bias values
+    noise_amount = float(request.form.get('noise_amount', 0.0))  # Default to 0.0 if not provided
 
     if model is None:
         return render_template(
@@ -86,7 +87,8 @@ def generate_audio():
             latent_dim=latent_dim,
             mode='prior',  # Default mode
             scale=scale,  # Default scale values
-            bias=bias  # Default bias values
+            bias=bias,  # Default bias values
+            noise_amount=noise_amount  # Pass noise_amount back to the template
         )
 
     # Collect parameters from the form
@@ -104,9 +106,10 @@ def generate_audio():
     print(f"Mode: {mode}, Duration: {duration}, Temperature: {temperature}, Input: {input_file}, Output: {output_file}")
     print(f"Scale: {scale}")
     print(f"Bias: {bias}")
+    print(f"Noise Amount: {noise_amount}")
 
     # Generate the audio using the current model
-    get_rave_output(model, mode, duration, temperature, input_file, output_file, downsampling_ratio, scale, bias)
+    get_rave_output(model, mode, duration, temperature, input_file, output_file, downsampling_ratio, scale, bias, noise_amount)
 
     # Move output file to the static folder
     static_audio_path = os.path.join(STATIC_FOLDER, output_file)
@@ -126,7 +129,8 @@ def generate_audio():
         current_model=os.path.basename(model_path),
         latent_dim=latent_dim,
         scale=scale,  # Pass scale values back to the template
-        bias=bias  # Pass bias values back to the template
+        bias=bias,  # Pass bias values back to the template
+        noise_amount=noise_amount  # Pass noise_amount back to the template
     )
 
 @app.route('/static/<filename>')
