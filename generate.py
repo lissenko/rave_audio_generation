@@ -108,16 +108,17 @@ def main():
     parser.add_argument('--model', type=str, required=True, help="Path to the TorchScript model file.")
     parser.add_argument('--mode', type=str, required=True, choices=['prior', 'encode'], 
                         help="Mode: 'prior' to generate from prior, 'encode' to encode/decode an audio file.")
-    parser.add_argument('--duration', type=float, default=3.0, help="Duration of the generated audio (for prior mode).")
-    parser.add_argument('--temperature', type=float, default=1.0, help="Temperature for sampling from the prior (for prior mode).")
-    parser.add_argument('--noise', type=float, default=0.0, help="Noise to add to the latent representation.")
+    parser.add_argument('--duration', type=float, default=3.0, help="Duration of the generated audio (for prior mode, default: 3.0).")
+    parser.add_argument('--temperature', type=float, default=1.0, help="Temperature for sampling from the prior (for prior mode, default: 1.0).")
+    parser.add_argument('--noise', type=float, default=0.0, help="Noise to add to the latent representation (default: 0.0).")
     parser.add_argument('--input_file', type=str, help="Path to the input audio file (for encode mode).")
-    parser.add_argument('--output_file', type=str, default='output.wav', help="Path to save the output audio file.")
-    parser.add_argument('--scale', type=float, nargs='+', default=[1.0], help="Scale factors for the latent space (default is [1.0]).")
-    parser.add_argument('--bias', type=float, nargs='+', default=[0.0], help="Bias values for the latent space (default is [0.0]).")
+    parser.add_argument('--output_file', type=str, default='output.wav', help="Path to save the output audio file (default: output.wav).")
+    parser.add_argument('--scale', type=float, nargs='+', default=[1.0], help="Scale factors for the latent space (default: [1.0] * latent_size).")
+    parser.add_argument('--bias', type=float, nargs='+', default=[0.0], help="Bias values for the latent space (default: [0.0] * latent_size).")
 
 
     args = parser.parse_args()
+    print(parser.format_help())
 
     model = torch.jit.load(args.model)
     downsampling_ratio, latent_dim = get_model_ratio_and_dim(model)
