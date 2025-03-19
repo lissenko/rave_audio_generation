@@ -1,5 +1,7 @@
- torch
- soundfile
- librosa
- numpy
- argparse
+torch
+soundfile
+librosa
+numpy
+argparse
+torch
+flask

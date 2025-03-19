@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rave Latent Space Explorer Generation</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1, h2, h3, h4 {
+            margin: 0;
+            color: #ffffff;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: #cccccc;
+        }
+
+        h4 {
+            margin: 0 0 10px 0;
+            color: #cccccc;
+            font-size: 1rem;
+        }
+
+        /* Flexbox Layout */
+        .container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .main-controls {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .vector-controls {
+            flex: 2; /* Make this section wider */
+            max-width: 1200px; /* Wider to accommodate more columns */
+            display: flex;
+            gap: 40px; /* Increased space between scale and bias sections */
+        }
+
+        /* Form Styling */
+        form {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            display: flex; /* Add Flexbox to the form */
+            gap: 40px; /* Increased space between left and right columns */
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #cccccc;
+            font-size: 0.9rem;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #333;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* VST-Like Knobs */
+        .knob {
+            width: 50px;
+            height: 50px;
+            background: #444;
+            border-radius: 50%;
+            position: relative;
+            margin: 10px auto;
+            cursor: pointer;
+        }
+
+        .knob::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 20px;
+            background: #007bff;
+            transform-origin: top;
+            transform: translate(-50%, -50%) rotate(0deg);
+            transition: transform 0.2s ease;
+        }
+
+        .knob:hover::after {
+            background: #0056b3;
+        }
+
+        /* Radio Buttons for Mode Selection */
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .mode-selector label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .mode-selector input[type="radio"] {
+            margin: 0;
+        }
+
+        /* Dynamic Slider Grid */
+        .slider-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 columns */
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .slider-container {
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .slider-container label {
+            font-size: 0.8rem;
+            color: #999;
+            white-space: nowrap; /* Prevent text from breaking into multiple lines */
+        }
+
+        .slider-value {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 0.9rem;
+        }
+
+        /* Collapsible Sections */
+        .collapsible {
+            flex: 1; /* Each collapsible section takes equal width */
+            margin-bottom: 10px;
+        }
+
+        .collapsible-header {
+            background: #444;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .collapsible-header:hover {
+            background: #555;
+        }
+
+        .collapsible-content {
+            padding: 10px;
+            border: 1px solid #444;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            background: #2d2d2d;
+            display: none;
+        }
+
+        .collapsible.expanded .collapsible-content {
+            display: block;
+        }
+
+
+        .audio-player {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .audio-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .audio-controls button {
+            background: #007bff;
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+
+        .audio-controls button:hover {
+            background: #0056b3;
+        }
+
+        .audio-controls button:active {
+            background: #004080;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 5px;
+            background: #444;
+            border-radius: 5px;
+            cursor: pointer;
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            width: 0;
+            height: 100%;
+            background: #007bff;
+            border-radius: 5px;
+            transition: width 0.1s;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .volume-control input[type="range"] {
+            width: 100px;
+            cursor: pointer;
+        }
+
+        .time-display {
+            font-size: 0.9rem;
+            color: #cccccc;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ message }}</h1>
+    <p><strong>Current Model:</strong> {{ current_model }}</p>
+
+    <form action="/load_model" method="POST" enctype="multipart/form-data">
+        <label for="model_file">Upload Model File:</label>
+        <input type="file" id="model_file" name="model_file" accept=".ts" required>
+        <button type="submit">Load Model</button>
+    </form>
+
+    <hr>
+
+    {% if latent_dim > 0 %}
+        <div class="container">
+            <form action="/generate_audio" method="POST" id="audioForm">
+                <!-- Left Column: Main Controls -->
+                <div class="main-controls">
+                    <!-- Mode Selection -->
+                    <div class="mode-selector">
+                        <label>
+                            <input type="radio" name="mode" value="prior" {% if mode == 'prior' %}checked{% endif %} onchange="toggleModeFields()"> Prior
+                        </label>
+                        <label>
+                            <input type="radio" name="mode" value="encode" {% if mode == 'encode' %}checked{% endif %} onchange="toggleModeFields()"> Encode
+                        </label>
+                    </div>
+
+                    <!-- Prior Mode Fields -->
+                    <div id="priorFields" style="display: {% if mode == 'prior' %}block{% else %}none{% endif %};">
+                        <label for="duration">Duration:</label>
+                        <input type="number" id="duration" name="duration" value="{{ duration }}" step="0.1">
+
+                        <label for="temperature">Temperature:</label>
+                        <input type="number" id="temperature" name="temperature" value="{{ temperature }}" step="0.1">
+                    </div>
+
+                    <!-- Encode Mode Fields -->
+                    <div id="encodeFields" style="display: {% if mode == 'encode' %}block{% else %}none{% endif %};">
+                        <label for="input_file">Input Audio File:</label>
+                        <input type="text" id="input_file" name="input_file" value="{{ input_file }}">
+                    </div>
+
+                    <!-- Output File -->
+                    <label for="output_file">Output Audio File:</label>
+                    <input type="text" id="output_file" name="output_file" value="{{ output_file }}">
+
+                    <button type="submit">Generate Audio</button>
+                    <button type="button" onclick="resetScalesAndBiases()">Reset Scales and Biases</button>
+
+                </div>
+
+                <!-- Right Column: Vector Controls (Scale and Bias) -->
+                <div class="vector-controls">
+					<div class="collapsible expanded" id="scaleSection">
+						<div class="collapsible-header" onclick="toggleSection('scaleSection')">
+							<span>Scale</span>
+							<span>▼</span>
+						</div>
+						<div class="collapsible-content">
+							<div class="slider-grid">
+								{% for i in range(latent_dim) %}
+									<div class="slider-container">
+										<label for="scale_{{ i }}">Scale {{ i }}: <span class="slider-value" id="scaleValue_{{ i }}">{{ scale[i] }}</span></label>
+										<div class="knob" id="knob_scale_{{ i }}" data-type="scale" data-index="{{ i }}"></div>
+										<input type="range" id="scale_{{ i }}" name="scale_{{ i }}" value="{{ scale[i] }}" min="-4" max="4" step="0.1" oninput="updateSliderValue('scale', {{ i }})" style="display: none;">
+									</div>
+								{% endfor %}
+							</div>
+						</div>
+					</div>
+
+					<div class="collapsible expanded" id="biasSection">
+						<div class="collapsible-header" onclick="toggleSection('biasSection')">
+							<span>Bias</span>
+							<span>▼</span>
+						</div>
+						<div class="collapsible-content">
+							<div class="slider-grid">
+								{% for i in range(latent_dim) %}
+									<div class="slider-container">
+										<label for="bias_{{ i }}">Bias {{ i }}: <span class="slider-value" id="biasValue_{{ i }}">{{ bias[i] }}</span></label>
+										<div class="knob" id="knob_bias_{{ i }}" data-type="bias" data-index="{{ i }}"></div>
+										<input type="range" id="bias_{{ i }}" name="bias_{{ i }}" value="{{ bias[i] }}" min="-4" max="4" step="0.1" oninput="updateSliderValue('bias', {{ i }})" style="display: none;">
+									</div>
+								{% endfor %}
+							</div>
+						</div>
+					</div>
+
+                </div>
+            </form>
+        </div>
+    {% endif %}
+
+    {% if audio_file %}
+    <div class="audio-player">
+        <audio id="audio" src="{{ url_for('serve_static', filename=audio_file) }}?v={{ timestamp }}"></audio>
+        <div class="audio-controls">
+            <button id="playPauseBtn">▶️</button>
+            <button id="stopBtn">⏹️</button>
+            <div class="volume-control">
+                <span>🔊</span>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
+            </div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="time-display">
+            <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+        </div>
+    </div>
+    {% endif %}
+<script>
+
+function resetScalesAndBiases() {
+	document.querySelectorAll('.knob').forEach(knob => {
+		const type = knob.getAttribute('data-type');
+		const index = knob.getAttribute('data-index');
+		const slider = document.getElementById(`${type}_${index}`);
+		const defaultValue = type === 'scale' ? 1.0 : 0.0; // Default values
+		slider.value = defaultValue;
+		updateSliderValue(type, index);
+		updateKnobUI(type, index, defaultValue);
+	});
+}
+
+// Function to initialize knobs
+function initializeKnobs() {
+    console.log("Initializing knobs"); // Debugging log
+
+    // Initialize scale knobs to default value of 1
+    document.querySelectorAll('.knob[data-type="scale"]').forEach(knob => {
+        const index = knob.getAttribute('data-index');
+        const slider = document.getElementById(`scale_${index}`);
+        const storedValue = localStorage.getItem(`scale_${index}`);
+        slider.value = storedValue !== null ? parseFloat(storedValue) : 1.0; // Use stored value or default to 1
+        updateSliderValue('scale', index); // Update the slider value display and knob rotation
+    });
+
+    // Initialize bias knobs to default value of 0
+    document.querySelectorAll('.knob[data-type="bias"]').forEach(knob => {
+        const index = knob.getAttribute('data-index');
+        const slider = document.getElementById(`bias_${index}`);
+        const storedValue = localStorage.getItem(`bias_${index}`);
+        slider.value = storedValue !== null ? parseFloat(storedValue) : 0.0; // Use stored value or default to 0
+        updateSliderValue('bias', index); // Update the slider value display and knob rotation
+    });
+}
+
+// Update slider values dynamically and store them in localStorage
+function updateSliderValue(type, index) {
+    const slider = document.getElementById(`${type}_${index}`);
+    const valueDisplay = document.getElementById(`${type}Value_${index}`);
+    valueDisplay.textContent = slider.value;
+    localStorage.setItem(`${type}_${index}`, slider.value); // Store the value in localStorage
+    updateKnobUI(type, index, slider.value);
+}
+
+// Update knob UI
+function updateKnobUI(type, index, value) {
+    const knob = document.getElementById(`knob_${type}_${index}`);
+    const max = 4; // Both scale and bias have the same max value
+    const min = -4; // Both scale and bias have the same min value
+    const range = max - min;
+    const rotation = ((value - min) / range) * 270 - 135; // Map value to rotation (-135deg to 135deg)
+    knob.style.transform = `rotate(${rotation}deg)`;
+}
+
+// Make knobs interactive (VST-like behavior)
+document.querySelectorAll('.knob').forEach(knob => {
+    let isDragging = false;
+    let startY = 0;
+    let startValue = 0;
+
+    // Default values for scale and bias
+    const defaultValues = {
+        scale: 1.0, // Default scale value is 1
+        bias: 0.0,  // Default bias value is 0
+    };
+
+    // Double-click to reset
+    knob.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        const type = knob.getAttribute('data-type');
+        const index = knob.getAttribute('data-index');
+        const slider = document.getElementById(`${type}_${index}`);
+        slider.value = defaultValues[type]; // Reset to default value
+        updateSliderValue(type, index); // Update the slider value display
+        updateKnobUI(type, index, defaultValues[type]); // Reset the knob rotation
+    });
+
+    // Mouse down to start dragging
+    knob.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // Prevent default behavior
+        isDragging = true;
+        startY = e.clientY;
+        const type = knob.getAttribute('data-type');
+        const index = knob.getAttribute('data-index');
+        const slider = document.getElementById(`${type}_${index}`);
+        startValue = parseFloat(slider.value);
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    const onMouseMove = (e) => {
+        if (!isDragging) return;
+        const type = knob.getAttribute('data-type');
+        const index = knob.getAttribute('data-index');
+        const slider = document.getElementById(`${type}_${index}`);
+        const max = 4; // Both scale and bias have the same max value
+        const min = -4; // Both scale and bias have the same min value
+        const deltaY = startY - e.clientY; // Vertical movement
+        const sensitivity = 0.05; // Reduced sensitivity
+        const newValue = startValue + deltaY * sensitivity;
+        const clampedValue = Math.min(max, Math.max(min, newValue));
+        slider.value = clampedValue.toFixed(1);
+        updateSliderValue(type, index);
+    };
+
+    const onMouseUp = () => {
+        isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    };
+});
+
+// Toggle collapsible sections
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    section.classList.toggle('expanded');
+}
+
+// Show/hide fields based on mode
+function toggleModeFields() {
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    document.getElementById('priorFields').style.display = mode === 'prior' ? 'block' : 'none';
+    document.getElementById('encodeFields').style.display = mode === 'encode' ? 'block' : 'none';
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure mode fields are correctly displayed
+    toggleModeFields();
+
+    // Initialize knobs with stored values or defaults
+    initializeKnobs();
+
+	const audio = document.getElementById('audio');
+	const playPauseBtn = document.getElementById('playPauseBtn');
+	const stopBtn = document.getElementById('stopBtn');
+	const progressBar = document.getElementById('progressBar');
+	const progressContainer = document.querySelector('.progress-container');
+	const volumeSlider = document.getElementById('volumeSlider');
+	const currentTimeDisplay = document.getElementById('currentTime');
+	const durationDisplay = document.getElementById('duration');
+
+	// Play/Pause functionality
+	playPauseBtn.addEventListener('click', () => {
+		if (audio.paused) {
+			audio.play();
+			playPauseBtn.textContent = '⏸️';
+		} else {
+			audio.pause();
+			playPauseBtn.textContent = '▶️';
+		}
+	});
+
+	// Stop functionality
+	stopBtn.addEventListener('click', () => {
+		audio.pause();
+		audio.currentTime = 0;
+		playPauseBtn.textContent = '▶️';
+	});
+
+	// Update progress bar
+	audio.addEventListener('timeupdate', () => {
+		const progress = (audio.currentTime / audio.duration) * 100;
+		progressBar.style.width = `${progress}%`;
+		currentTimeDisplay.textContent = formatTime(audio.currentTime);
+	});
+
+	// Seek functionality
+	progressContainer.addEventListener('click', (e) => {
+		const clickX = e.offsetX;
+		const width = progressContainer.clientWidth;
+		const seekTime = (clickX / width) * audio.duration;
+		audio.currentTime = seekTime;
+	});
+
+	// Volume control
+	volumeSlider.addEventListener('input', () => {
+		audio.volume = volumeSlider.value;
+	});
+
+	// Format time (MM:SS)
+	function formatTime(time) {
+		const minutes = Math.floor(time / 60);
+		const seconds = Math.floor(time % 60);
+		return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+	}
+
+	// Update duration display
+	audio.addEventListener('loadedmetadata', () => {
+		durationDisplay.textContent = formatTime(audio.duration);
+	});
+});
+
+</script>
+</body>
+</html>

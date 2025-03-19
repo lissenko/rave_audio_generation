@@ -17,7 +17,6 @@ def sample_prior(model, n_steps, temperature):
 
     with torch.no_grad():
         prior = model.prior(inputs_rave[0])
-    print(prior.shape)
     return prior
 
 def get_audio_from_file(input_file):
@@ -42,7 +41,6 @@ def encode_input_file(model, input_file):
     audio_tensor = audio_tensor.unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions
     with torch.no_grad():
         latent = model.encode(audio_tensor)
-    print(latent.shape)
     return latent
 
 def decode(model, latent):
@@ -53,13 +51,13 @@ def decode(model, latent):
         audio = model.decode(latent)
     return audio
 
-def get_downsampling_ratio(model):
+def get_model_ratio_and_dim(model):
     x_len = 2**14
     n_channels = 1 # mono
     x = torch.zeros(1, n_channels, x_len)
     z = model.encode(x)
     downsampling_ratio = x_len // z.shape[-1]
-    return downsampling_ratio
+    return downsampling_ratio, z.size(1)
 
 def time(dur, ratio):
     total_audio_samples = dur * fs
@@ -75,6 +73,34 @@ def apply_scale_and_bias(latent, scale, bias):
         latent[:, i, :] = latent[:, i, :] * scale[i] + bias[i]
     return latent
 
+def get_rave_output(model, mode, duration, temperature, input_file, output_file, downsampling_ratio, scale, bias):
+
+    model.eval()
+    
+    if mode == 'prior' and not hasattr(model, 'prior'):
+        print(f"The model {model_path} does not have a prior method.")
+        exit()
+
+    if mode == 'prior':
+        if duration is None or temperature is None:
+            print("Error: --duration and --temperature are required for prior mode.")
+            exit()
+        n_steps = time(duration, downsampling_ratio)
+        latent = sample_prior(model, n_steps, temperature)
+
+    elif mode == 'encode':
+        if input_file is None:
+            print("Error: --input_file is required for encode mode.")
+            exit()
+        latent = encode_input_file(model, input_file)
+
+    latent_dim = latent.size(1)
+    latent = apply_scale_and_bias(latent, scale, bias)
+
+    audio = decode(model, latent)
+    write_audio_to_file(audio, output_file)
+    print(f"Audio saved to {output_file}")
+
 def main():
     parser = argparse.ArgumentParser(description="Generate audio using a RAVE model.")
     parser.add_argument('--model', type=str, required=True, help="Path to the TorchScript model file.")
@@ -84,38 +110,26 @@ def main():
     parser.add_argument('--temperature', type=float, help="Temperature for sampling from the prior (for prior mode).")
     parser.add_argument('--input_file', type=str, help="Path to the input audio file (for encode mode).")
     parser.add_argument('--output_file', type=str, default='output.wav', help="Path to save the output audio file.")
+    parser.add_argument('--scale', type=float, nargs='+', default=[1.0], help="Scale factors for the latent space (default is [1.0]).")
+    parser.add_argument('--bias', type=float, nargs='+', default=[0.0], help="Bias values for the latent space (default is [0.0]).")
+
+
     args = parser.parse_args()
 
     model = torch.jit.load(args.model)
-    model.eval()
+    downsampling_ratio, latent_dim = get_model_ratio_and_dim(model)
 
-    if args.mode == 'prior' and not hasattr(model, 'prior'):
-        print(f"The model {args.model} does not have a prior method.")
+    # Give the same value to every dim
+    if len(args.scale) == 1:
+        args.scale *= latent_dim
+    if len(args.bias) == 1:
+        args.bias *= latent_dim
+
+    if len(args.scale) != latent_dim or len(args.bias) != latent_dim:
+        print("Error: Scale and bias dimensions must match the latent dimension.")
         exit()
 
-    downsampling_ratio = get_downsampling_ratio(model)
-
-    if args.mode == 'prior':
-        if args.duration is None or args.temperature is None:
-            print("Error: --duration and --temperature are required for prior mode.")
-            exit()
-        n_steps = time(args.duration, downsampling_ratio)
-        latent = sample_prior(model, n_steps, args.temperature)
-
-    elif args.mode == 'encode':
-        if args.input_file is None:
-            print("Error: --input_file is required for encode mode.")
-            exit()
-        latent = encode_input_file(model, args.input_file)
-
-    latent_dim = latent.size(1)
-    scale = [random.uniform(0, 2) for _ in range(latent_dim)]
-    bias = [random.uniform(-10, 10) for _ in range(latent_dim)]
-    latent = apply_scale_and_bias(latent, scale, bias)
-
-    audio = decode(model, latent)
-    write_audio_to_file(audio, args.output_file)
-    print(f"Audio saved to {args.output_file}")
+    get_rave_output(model, args.mode, args.duration, args.temperature, args.input_file, args.output_file, downsampling_ratio, args.scale, args.bias)
 
 if __name__ == '__main__':
     main()
