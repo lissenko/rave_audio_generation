@@ -61,7 +61,7 @@ def load_model():
         message=message,
         current_model=os.path.basename(model_path),
         latent_dim=latent_dim,
-        mode='prior',  # Default mode
+        mode='encode',  # Default mode
         scale=[1.0] * latent_dim if latent_dim > 0 else [],  # Default scale values
         bias=[0.0] * latent_dim if latent_dim > 0 else []  # Default bias values
     )

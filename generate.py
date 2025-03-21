@@ -116,9 +116,7 @@ def main():
     parser.add_argument('--scale', type=float, nargs='+', default=[1.0], help="Scale factors for the latent space (default: [1.0] * latent_size).")
     parser.add_argument('--bias', type=float, nargs='+', default=[0.0], help="Bias values for the latent space (default: [0.0] * latent_size).")
 
-
     args = parser.parse_args()
-    print(parser.format_help())
 
     model = torch.jit.load(args.model)
     downsampling_ratio, latent_dim = get_model_ratio_and_dim(model)
@@ -137,18 +135,16 @@ def main():
                     args.input_file, args.output_file, downsampling_ratio, \
                     args.scale, args.bias, args.noise)
 
-    if False:
+    # if False:
+    #     latent_size_buffer = dict(model.named_buffers()).get("_rave.latent_size")
+    #     if latent_size_buffer is not None:
+    #         latent_size = latent_size_buffer.item()
+    #         print(f"Latent Size: {latent_size}")
+    #     else:
+    #         print("latent_size not found in buffers.")
 
-        # Check if latent_size exists in buffers
-        latent_size_buffer = dict(model.named_buffers()).get("_rave.latent_size")
-        if latent_size_buffer is not None:
-            latent_size = latent_size_buffer.item()  # Convert tensor to integer
-            print(f"Latent Size: {latent_size}")
-        else:
-            print("latent_size not found in buffers.")
-
-        if hasattr(model, "full_latent_size"):
-            print("FOUND: ", getattr(model, "full_latent_size"))
+    #     if hasattr(model, "full_latent_size"):
+    #         print("Latent Size: ", getattr(model, "full_latent_size"))
 
 if __name__ == '__main__':
     main()

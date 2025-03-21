@@ -312,10 +312,10 @@
                     <!-- Mode Selection -->
                     <div class="mode-selector">
                         <label>
-                            <input type="radio" name="mode" value="prior" {% if mode == 'prior' %}checked{% endif %} onchange="toggleModeFields()"> Prior
+                            <input type="radio" name="mode" value="encode" {% if mode == 'encode' %}checked{% endif %} onchange="toggleModeFields()"> Encode
                         </label>
                         <label>
-                            <input type="radio" name="mode" value="encode" {% if mode == 'encode' %}checked{% endif %} onchange="toggleModeFields()"> Encode
+                            <input type="radio" name="mode" value="prior" {% if mode == 'prior' %}checked{% endif %} onchange="toggleModeFields()"> Prior
                         </label>
                     </div>
 
@@ -329,18 +329,18 @@
                     </div>
 
                     <!-- Noise Amount -->
-                    <label for="noise_amount">Noise Amount:</label>
-                    <input type="number" id="noise_amount" name="Latent Noise" value="{{ noise_amount }}" step="0.1" min="0" max="7.0">
+                    <label for="noise_amount">Latent Noise:</label>
+                    <input type="number" id="noise_amount" name="noise_amount" value="{{ noise_amount }}" step="0.1" min="0" max="7.0">
 
 
                     <!-- Encode Mode Fields -->
                     <div id="encodeFields" style="display: {% if mode == 'encode' %}block{% else %}none{% endif %};">
-                        <label for="input_file">Input Audio File:</label>
+                        <label for="input_file">Input Path:</label>
                         <input type="text" id="input_file" name="input_file" value="{{ input_file }}">
                     </div>
 
                     <!-- Output File -->
-                    <label for="output_file">Output Audio File:</label>
+                    <label for="output_file">Output Path:</label>
                     <input type="text" id="output_file" name="output_file" value="{{ output_file }}">
 
                     <button type="submit">Generate Audio</button>
